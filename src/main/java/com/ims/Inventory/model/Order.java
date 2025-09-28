@@ -13,7 +13,7 @@ public class Order {
 
     private int quantity;
     private LocalDateTime orderDate;
-    private Double totalAmount; // <-- ADD THIS LINE
+    private Double totalAmount;
 
     @ManyToOne
     @JoinColumn(name = "customer_id")
@@ -23,52 +23,58 @@ public class Order {
     @JoinColumn(name = "item_id")
     private Item item;
 
-    // Getters and Setters
-	public Long getId() {
-		return id;
-	}
+    // --- NEW DATABASE FIELDS ---
+    @Enumerated(EnumType.STRING)
+    private OrderFulfillmentType fulfillmentType;
 
-	public void setId(Long id) {
-		this.id = id;
-	}
+    @ManyToOne
+    @JoinColumn(name = "fulfillment_location_id") // Can be null if not applicable
+    private Location fulfillmentLocation;
+    // --- END OF NEW DATABASE FIELDS ---
 
-	public int getQuantity() {
-		return quantity;
-	}
 
-	public void setQuantity(int quantity) {
-		this.quantity = quantity;
-	}
+    // --- NEW TRANSIENT FIELD FOR THE FORM ---
+    @Transient
+    private Long fulfillmentLocationId;
+    // --- END OF NEW TRANSIENT FIELD ---
 
-	public LocalDateTime getOrderDate() {
-		return orderDate;
-	}
 
-	public void setOrderDate(LocalDateTime orderDate) {
-		this.orderDate = orderDate;
-	}
+    // --- Getters and Setters ---
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public int getQuantity() { return quantity; }
+    public void setQuantity(int quantity) { this.quantity = quantity; }
+    public LocalDateTime getOrderDate() { return orderDate; }
+    public void setOrderDate(LocalDateTime orderDate) { this.orderDate = orderDate; }
+    public Double getTotalAmount() { return totalAmount; }
+    public void setTotalAmount(Double totalAmount) { this.totalAmount = totalAmount; }
+    public Customer getCustomer() { return customer; }
+    public void setCustomer(Customer customer) { this.customer = customer; }
+    public Item getItem() { return item; }
+    public void setItem(Item item) { this.item = item; }
 
-    public Double getTotalAmount() { // <-- ADD THIS GETTER
-        return totalAmount;
+    // --- GETTERS AND SETTERS FOR NEW FIELDS ---
+    public OrderFulfillmentType getFulfillmentType() {
+        return fulfillmentType;
     }
 
-    public void setTotalAmount(Double totalAmount) { // <-- ADD THIS SETTER
-        this.totalAmount = totalAmount;
+    public void setFulfillmentType(OrderFulfillmentType fulfillmentType) {
+        this.fulfillmentType = fulfillmentType;
     }
 
-	public Customer getCustomer() {
-		return customer;
-	}
+    public Location getFulfillmentLocation() {
+        return fulfillmentLocation;
+    }
 
-	public void setCustomer(Customer customer) {
-		this.customer = customer;
-	}
+    public void setFulfillmentLocation(Location fulfillmentLocation) {
+        this.fulfillmentLocation = fulfillmentLocation;
+    }
+    
+    public Long getFulfillmentLocationId() {
+        return fulfillmentLocationId;
+    }
 
-	public Item getItem() {
-		return item;
-	}
-
-	public void setItem(Item item) {
-		this.item = item;
-	}
+    public void setFulfillmentLocationId(Long fulfillmentLocationId) {
+        this.fulfillmentLocationId = fulfillmentLocationId;
+    }
 }

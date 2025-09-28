@@ -14,71 +14,43 @@ public class Item {
     private String category;
     private Double price;
 
-    @OneToOne(mappedBy = "item", cascade = CascadeType.ALL)
-    private StockUnit stockUnit;
+    @OneToMany(mappedBy = "item")
+    private List<StockUnit> stockUnits;
 
     @OneToMany(mappedBy = "item", cascade = CascadeType.ALL)
     private List<Order> orders;
 
-    // This field is not saved to the database. It's used only for the form.
     @Transient
-    private Integer initialQuantity; // <-- CHANGED from int to Integer
+    private Integer initialQuantity;
 
-    // Getters and Setters
-    public Long getId() {
-        return id;
+    @Transient
+    private Long locationId; // This field should already be here
+
+    
+    // --- ADD THIS GETTER AND SETTER ---
+    public Long getLocationId() {
+        return locationId;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setLocationId(Long locationId) {
+        this.locationId = locationId;
     }
+    // --- END OF NEW METHODS ---
 
-    public String getName() {
-        return name;
-    }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getCategory() {
-        return category;
-    }
-
-    public void setCategory(String category) {
-        this.category = category;
-    }
-
-    public Double getPrice() {
-        return price;
-    }
-
-    public void setPrice(Double price) {
-        this.price = price;
-    }
-
-    public StockUnit getStockUnit() {
-        return stockUnit;
-    }
-
-    public void setStockUnit(StockUnit stockUnit) {
-        this.stockUnit = stockUnit;
-    }
-
-    public List<Order> getOrders() {
-        return orders;
-    }
-
-    public void setOrders(List<Order> orders) {
-        this.orders = orders;
-    }
-
-    public Integer getInitialQuantity() { // <-- CHANGED
-        return initialQuantity;
-    }
-
-    public void setInitialQuantity(Integer initialQuantity) { // <-- CHANGED
-        this.initialQuantity = initialQuantity;
-    }
+    // --- Existing Getters and Setters ---
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
+    public Double getPrice() { return price; }
+    public void setPrice(Double price) { this.price = price; }
+    public List<StockUnit> getStockUnits() { return stockUnits; }
+    public void setStockUnits(List<StockUnit> stockUnits) { this.stockUnits = stockUnits; }
+    public List<Order> getOrders() { return orders; }
+    public void setOrders(List<Order> orders) { this.orders = orders; }
+    public Integer getInitialQuantity() { return initialQuantity; }
+    public void setInitialQuantity(Integer initialQuantity) { this.initialQuantity = initialQuantity; }
 }
-

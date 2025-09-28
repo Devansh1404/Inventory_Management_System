@@ -3,27 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <title>Inventory Dashboard</title>
-    <!-- Bootstrap CSS for styling and modals -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
-        body {
-            background-color: #f5f5dc; /* Cream background color */
-        }
-        .low-stock-warning {
-            color: #dc3545; /* Red color for warnings */
-            font-weight: bold;
-        }
+        body { background-color: #f5f5dc; }
+        .low-stock-warning { color: #dc3545; font-weight: bold; }
     </style>
 </head>
 <body>
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1><i class="fas fa-warehouse"></i> Inventory Dashboard</h1>
+        <a th:href="@{/locations}" class="btn btn-info">
+            <i class="fas fa-map-marker-alt"></i> Manage Locations
+        </a>
     </div>
 
-    <!-- Success/Error Messages -->
     <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
         <span th:text="${successMessage}"></span>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -33,9 +28,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 
-    <!-- Main Content in a Row -->
     <div class="row g-4">
-        <!-- Items Section -->
         <div class="col-lg-6">
             <div class="card shadow-sm">
                 <div class="card-header d-flex justify-content-between align-items-center">
@@ -58,7 +51,7 @@
                             <tr th:each="item : ${listItems}">
                                 <td th:text="${item.name}"></td>
                                 <td th:text="${item.category}"></td>
-                                <td th:text="'$' + ${#numbers.formatDecimal(item.price, 1, 2)}"></td>
+                                <td th:text="${item.price != null ? '$' + #numbers.formatDecimal(item.price, 1, 2) : '$0.00'}"></td>
                                 <td>
                                     <button type="button" class="btn btn-warning btn-sm edit-item-btn"
                                             th:attr="data-id=${item.id}, data-name=${item.name}, data-category=${item.category}, data-price=${item.price}"
@@ -76,7 +69,6 @@
             </div>
         </div>
 
-        <!-- Customers Section -->
         <div class="col-lg-6">
             <div class="card shadow-sm">
                 <div class="card-header d-flex justify-content-between align-items-center">
@@ -106,7 +98,6 @@
             </div>
         </div>
 
-        <!-- Stock Levels Section -->
         <div class="col-lg-6">
             <div class="card shadow-sm">
                 <div class="card-header">
@@ -117,13 +108,15 @@
                         <thead>
                             <tr>
                                 <th>Item Name</th>
+                                <th>Location</th>
                                 <th>Quantity in Stock</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr th:each="stockUnit : ${listStockUnits}">
-                                <td th:text="${stockUnit.item.name}"></td>
+                                <td th:text="${stockUnit.item?.name}"></td>
+                                <td th:text="${stockUnit.location?.name}"></td>
                                 <td>
                                     <span th:text="${stockUnit.quantity}"></span>
                                     <span th:if="${stockUnit.quantity < 10}" class="low-stock-warning ms-2">
@@ -132,7 +125,7 @@
                                 </td>
                                 <td>
                                      <button type="button" class="btn btn-secondary btn-sm edit-stock-btn"
-                                            th:attr="data-id=${stockUnit.id}, data-name=${stockUnit.item.name}, data-quantity=${stockUnit.quantity}"
+                                            th:attr="data-id=${stockUnit.id}, data-name=${stockUnit.item?.name}, data-quantity=${stockUnit.quantity}"
                                             data-bs-toggle="modal" data-bs-target="#updateStockModal">
                                         <i class="fas fa-sync-alt"></i> Update
                                     </button>
@@ -144,7 +137,6 @@
             </div>
         </div>
 
-        <!-- Recent Orders Section -->
         <div class="col-lg-6">
             <div class="card shadow-sm">
                 <div class="card-header d-flex justify-content-between align-items-center">
@@ -166,10 +158,10 @@
                         </thead>
                         <tbody>
                             <tr th:each="order : ${listOrders}">
-                                <td th:text="${order.item.name}"></td>
+                                <td th:text="${order.item?.name}"></td>
                                 <td th:text="${order.quantity}"></td>
-                                <td th:text="${order.customer.name}"></td>
-                                <td th:text="'$' + ${#numbers.formatDecimal(order.totalAmount, 1, 2)}"></td>
+                                <td th:text="${order.customer?.name}"></td>
+                                <td th:text="${order.totalAmount != null ? '$' + #numbers.formatDecimal(order.totalAmount, 1, 2) : '$0.00'}"></td>
                                 <td>
                                     <a th:href="@{/orders/cancel/{id}(id=${order.id})}" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to cancel this order?');">
                                         <i class="fas fa-times"></i> Cancel
@@ -184,9 +176,6 @@
     </div>
 </div>
 
-<!-- MODALS (Pop-up Forms) -->
-
-<!-- Add Item Modal -->
 <div class="modal fade" id="addItemModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -209,6 +198,15 @@
                         <input type="number" step="0.01" th:field="*{price}" class="form-control" required>
                     </div>
                     <div class="mb-3">
+                        <label class="form-label">Location for Initial Stock</label>
+                        <select th:field="*{locationId}" class="form-select" required>
+                            <option value="">Select a Location</option>
+                            <option th:each="location : ${listLocations}"
+                                    th:value="${location.id}"
+                                    th:text="${location.name}"></option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label">Initial Quantity in Stock</label>
                         <input type="number" th:field="*{initialQuantity}" class="form-control" required>
                     </div>
@@ -219,7 +217,6 @@
     </div>
 </div>
 
-<!-- Edit Item Modal -->
 <div class="modal fade" id="editItemModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -250,7 +247,6 @@
 </div>
 
 
-<!-- Add Customer Modal -->
 <div class="modal fade" id="addCustomerModal" tabindex="-1">
      <div class="modal-dialog">
         <div class="modal-content">
@@ -279,7 +275,6 @@
     </div>
 </div>
 
-<!-- Add Order Modal -->
 <div class="modal fade" id="addOrderModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -307,6 +302,28 @@
                         <label class="form-label">Quantity</label>
                         <input type="number" th:field="*{quantity}" class="form-control" required>
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label">Fulfillment Method</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" th:field="*{fulfillmentType}" value="SHIPPING" id="fulfillmentShipping" checked>
+                            <label class="form-check-label" for="fulfillmentShipping">
+                                Ship to Home (from Main Warehouse)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" th:field="*{fulfillmentType}" value="IN_STORE_PICKUP" id="fulfillmentPickup">
+                            <label class="form-check-label" for="fulfillmentPickup">
+                                In-Store Pickup
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3" id="pickupLocationDiv" style="display: none;">
+                        <label class="form-label">Pickup Location</label>
+                        <select th:field="*{fulfillmentLocationId}" class="form-select">
+                            <option value="">Select a Store</option>
+                            <option th:each="store : ${listStores}" th:value="${store.id}" th:text="${store.name}"></option>
+                        </select>
+                    </div>
                     <button type="submit" class="btn btn-primary">Place Order</button>
                 </form>
             </div>
@@ -314,7 +331,6 @@
     </div>
 </div>
 
-<!-- Update Stock Modal -->
 <div class="modal fade" id="updateStockModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -337,13 +353,10 @@
 </div>
 
 
-<!-- Bootstrap JS Bundle -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- Custom JS for Modals -->
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    // For Update Stock Modal
     const updateStockModal = document.getElementById('updateStockModal');
     if(updateStockModal) {
         updateStockModal.addEventListener('show.bs.modal', function (event) {
@@ -351,18 +364,15 @@ document.addEventListener('DOMContentLoaded', function () {
             const stockUnitId = button.getAttribute('data-id');
             const itemName = button.getAttribute('data-name');
             const currentQuantity = button.getAttribute('data-quantity');
-
             const modalTitle = updateStockModal.querySelector('.modal-title #stockItemName');
             const stockUnitIdInput = updateStockModal.querySelector('#stockUnitId');
             const newQuantityInput = updateStockModal.querySelector('#newQuantity');
-
             modalTitle.textContent = itemName;
             stockUnitIdInput.value = stockUnitId;
             newQuantityInput.value = currentQuantity;
         });
     }
 
-    // For Edit Item Modal
     const editItemModal = document.getElementById('editItemModal');
     if(editItemModal) {
         editItemModal.addEventListener('show.bs.modal', function (event) {
@@ -371,20 +381,41 @@ document.addEventListener('DOMContentLoaded', function () {
             const itemName = button.getAttribute('data-name');
             const itemCategory = button.getAttribute('data-category');
             const itemPrice = button.getAttribute('data-price');
-            
             const idInput = editItemModal.querySelector('#editItemId');
             const nameInput = editItemModal.querySelector('#editItemName');
             const categoryInput = editItemModal.querySelector('#editItemCategory');
             const priceInput = editItemModal.querySelector('#editItemPrice');
-
             idInput.value = itemId;
             nameInput.value = itemName;
             categoryInput.value = itemCategory;
             priceInput.value = itemPrice;
         });
     }
+    
+    const fulfillmentShippingRadio = document.getElementById('fulfillmentShipping');
+    const fulfillmentPickupRadio = document.getElementById('fulfillmentPickup');
+    const pickupLocationDiv = document.getElementById('pickupLocationDiv');
+    const pickupLocationSelect = pickupLocationDiv.querySelector('select');
+
+    function togglePickupLocation() {
+        if (fulfillmentPickupRadio.checked) {
+            pickupLocationDiv.style.display = 'block';
+            pickupLocationSelect.required = true;
+        } else {
+            pickupLocationDiv.style.display = 'none';
+            pickupLocationSelect.required = false;
+            pickupLocationSelect.value = '';
+        }
+    }
+
+    if(fulfillmentShippingRadio) {
+        fulfillmentShippingRadio.addEventListener('change', togglePickupLocation);
+    }
+    if(fulfillmentPickupRadio) {
+        fulfillmentPickupRadio.addEventListener('change', togglePickupLocation);
+    }
+    togglePickupLocation();
 });
 </script>
 </body>
 </html>
-

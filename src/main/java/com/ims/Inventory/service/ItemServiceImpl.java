@@ -1,8 +1,10 @@
 package com.ims.Inventory.service;
 
 import com.ims.Inventory.model.Item;
+import com.ims.Inventory.model.Location;
 import com.ims.Inventory.model.StockUnit;
 import com.ims.Inventory.repository.ItemRepository;
+import com.ims.Inventory.repository.LocationRepository;
 import com.ims.Inventory.repository.StockUnitRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,9 @@ public class ItemServiceImpl implements ItemService {
     @Autowired
     private StockUnitRepository stockUnitRepository;
 
+    @Autowired
+    private LocationRepository locationRepository;
+
     @Override
     public List<Item> getAllItems() {
         return itemRepository.findAll();
@@ -31,7 +36,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     /**
-     * Saves a new item and creates its initial stock record.
+     * Saves a new item and creates its initial stock record in the user-selected location.
      */
     @Override
     @Transactional
@@ -39,18 +44,31 @@ public class ItemServiceImpl implements ItemService {
         boolean isNewItem = item.getId() == null;
         Item savedItem = itemRepository.save(item);
 
-        if (isNewItem) {
+        if (isNewItem && item.getInitialQuantity() != null && item.getInitialQuantity() > 0) {
+            
+            // --- THIS IS THE UPDATED LOGIC ---
+            // Get the location ID chosen by the user in the form
+            Long locationId = item.getLocationId();
+            if (locationId == null) {
+                throw new IllegalStateException("Location ID was not provided for the new item.");
+            }
+
+            // Find the selected location in the database
+            Location selectedLocation = locationRepository.findById(locationId)
+                .orElseThrow(() -> new IllegalStateException("Selected location with ID " + locationId + " not found."));
+
             StockUnit stockUnit = new StockUnit();
             stockUnit.setItem(savedItem);
-            // Use the initial quantity from the form, defaulting to 0 if not provided.
-            stockUnit.setQuantity(item.getInitialQuantity() != null ? item.getInitialQuantity() : 0);
+            stockUnit.setLocation(selectedLocation); // <-- Set the location object from the form
+            stockUnit.setQuantity(item.getInitialQuantity());
+            
             stockUnitRepository.save(stockUnit);
         }
         return savedItem;
     }
 
     /**
-     * Updates an existing item's details.
+     * Updates an existing item's details (name, category, price). Stock is not affected here.
      */
     @Override
     @Transactional
@@ -66,8 +84,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     /**
-     * Deletes an item and its associated stock unit. The @Transactional annotation ensures
-     * that both operations succeed or neither do, maintaining data consistency.
+     * Deletes an item and ALL of its associated stock units from every location.
      */
     @Override
     @Transactional
@@ -75,11 +92,12 @@ public class ItemServiceImpl implements ItemService {
         Item item = itemRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("Invalid item Id:" + id));
 
-        // Important: Find and delete the associated stock unit first to prevent database errors.
-        stockUnitRepository.findByItem(item).ifPresent(stockUnit -> stockUnitRepository.deleteById(stockUnit.getId()));
+        List<StockUnit> stockUnitsToDelete = stockUnitRepository.findByItem(item);
         
-        // Now, it's safe to delete the item itself.
+        if (!stockUnitsToDelete.isEmpty()) {
+            stockUnitRepository.deleteAll(stockUnitsToDelete);
+        }
+        
         itemRepository.deleteById(id);
     }
 }
-
